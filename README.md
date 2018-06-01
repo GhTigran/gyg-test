@@ -70,7 +70,15 @@ Output example
 ```
 ## Running the tests
 
-Tests not ready yet
+Move to directory 
+```
+/vendor/bin
+```
+Execute
+```
+phpunit --bootstrap ../autoload.php ../../tests
+```
+
 
 ## Built With
 
