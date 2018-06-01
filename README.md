@@ -1,4 +1,4 @@
-# Get Your Guide Test
+# GYG Test
 
 This small project fetches data from external service, filters based on provided parameters, and shows the available results.
 
@@ -79,8 +79,6 @@ Tests not ready yet
 ## Authors
 
 * **Tigran Ghabuzyan**  - [GhTigran](https://github.com/GhTigran)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## License
 
