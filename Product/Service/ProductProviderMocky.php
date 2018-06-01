@@ -2,7 +2,7 @@
 
 namespace Product\Service;
 
-use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use Product\Exception\ServiceProviderException;
 
 class ProductProviderMocky implements ProductProviderInterface
@@ -10,9 +10,11 @@ class ProductProviderMocky implements ProductProviderInterface
     const URL = 'http://www.mocky.io/v2/58ff37f2110000070cf5ff16';
     private $client;
 
-    public function __construct()
+    public function __construct(
+        ClientInterface $client
+    )
     {
-        $this->client = new Client();
+        $this->client = $client;
     }
 
     /**
