@@ -6,6 +6,10 @@ use Product\Exception\ServiceProviderException;
 
 class ProductService
 {
+    const PRODUCT_PROPERTY_ID          = 'product_id';
+    const PRODUCT_PROPERTY_START       = 'activity_start_datetime';
+    const PRODUCT_PROPERTY_START_TIMES = 'available_starttimes';
+
     private $providerService;
 
     public function __construct(
@@ -24,13 +28,13 @@ class ProductService
      */
     public function getAvailableProducts(string $from, string $to, int $travelers): array
     {
-        $filteredProducts   = $this->providerService->getFilteredProducts($from, $to, $travelers);
+        $filteredProducts = $this->providerService->getFilteredProducts($from, $to, $travelers);
 
         if (!$filteredProducts) {
             return [];
         }
 
-        $sortedProducts     = $this->sortProducts($filteredProducts);
+        $sortedProducts      = $this->sortProducts($filteredProducts);
         $reformattedProducts = $this->reformatProducts($sortedProducts);
 
         return $reformattedProducts;
@@ -39,28 +43,28 @@ class ProductService
     private function sortProducts(array $products): array
     {
         usort($products, function ($product1, $product2) {
-            if ($product1['product_id'] == $product2['product_id']) {
-                return $product1['activity_start_datetime'] <=> $product2['activity_start_datetime'];
+            if ($product1[self::PRODUCT_PROPERTY_ID] == $product2[self::PRODUCT_PROPERTY_ID]) {
+                return $product1[self::PRODUCT_PROPERTY_START] <=> $product2[self::PRODUCT_PROPERTY_START];
             }
 
-            return $product1['product_id'] <=> $product2['product_id'];
+            return $product1[self::PRODUCT_PROPERTY_ID] <=> $product2[self::PRODUCT_PROPERTY_ID];
         });
 
         return $products;
     }
 
-    private function reformatProducts(array $products) : array
+    private function reformatProducts(array $products): array
     {
         $reformatted = [];
 
         foreach ($products as $product) {
-            if (isset($reformatted[$product['product_id']])) {
-                $reformatted[$product['product_id']]['available_starttimes'][] = $product['activity_start_datetime'];
+            if (isset($reformatted[$product[self::PRODUCT_PROPERTY_ID]])) {
+                $reformatted[$product[self::PRODUCT_PROPERTY_ID]][self::PRODUCT_PROPERTY_START_TIMES][] = $product[self::PRODUCT_PROPERTY_START];
             } else {
-                $reformatted[$product['product_id']] = [
-                    'product_id'           => $product['product_id'],
-                    'available_starttimes' => [
-                        $product['activity_start_datetime'],
+                $reformatted[$product[self::PRODUCT_PROPERTY_ID]] = [
+                    self::PRODUCT_PROPERTY_ID          => $product[self::PRODUCT_PROPERTY_ID],
+                    self::PRODUCT_PROPERTY_START_TIMES => [
+                        $product[self::PRODUCT_PROPERTY_START],
                     ],
                 ];
             }

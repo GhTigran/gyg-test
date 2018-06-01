@@ -3,11 +3,22 @@
 namespace Product\Service;
 
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
 use Product\Exception\ServiceProviderException;
 
 class ProductProviderMocky implements ProductProviderInterface
 {
     const URL = 'http://www.mocky.io/v2/58ff37f2110000070cf5ff16';
+
+    const COLLECTION_KEY            = 'product_availabilities';
+    const PRODUCT_PROPERTY_ID       = 'product_id';
+    const PRODUCT_PROPERTY_START    = 'activity_start_datetime';
+    const PRODUCT_PROPERTY_DURATION = 'activity_duration_in_minutes';
+    const PRODUCT_PROPERTY_PLACES   = 'places_available';
+
+    /**
+     * @var ClientInterface
+     */
     private $client;
 
     public function __construct(
@@ -30,11 +41,11 @@ class ProductProviderMocky implements ProductProviderInterface
 
         $filteredProducts = array_filter($allProducts, function ($product) use ($from, $to, $travelers) {
             return (
-                $product['places_available'] >= $travelers
+                $product[self::PRODUCT_PROPERTY_PLACES] >= $travelers
                 &&
-                $product['activity_start_datetime'] >= $from
+                $product[self::PRODUCT_PROPERTY_START] >= $from
                 &&
-                strtotime($product['activity_start_datetime']) + 60 * $product['activity_duration_in_minutes'] <= strtotime($to)
+                strtotime($product[self::PRODUCT_PROPERTY_START]) + 60 * $product[self::PRODUCT_PROPERTY_DURATION] <= strtotime($to)
             );
         });
 
@@ -47,23 +58,27 @@ class ProductProviderMocky implements ProductProviderInterface
      */
     public function getAllProducts(): array
     {
-        $res = $this->client->request('GET', self::URL);
+        try {
+            $response = $this->client->request('GET', self::URL);
 
-        if ($res->getStatusCode() != 200) {
-            throw new ServiceProviderException('Failed to retrieve data from service provider');
+            if ($response->getStatusCode() != 200) {
+                throw new ServiceProviderException('Failed to retrieve data from service provider');
+            }
+
+            $products = json_decode($response->getBody(), true);
+
+            if (json_last_error() != JSON_ERROR_NONE || !isset($products['product_availabilities'])) {
+                throw new ServiceProviderException('Data provided by service is malformed');
+            }
+
+            $products = $products[self::COLLECTION_KEY];
+
+            $this->validateImportedProducts($products);
+
+            return $products;
+        } catch (GuzzleException $e) {
+            throw new ServiceProviderException('Failed to retrieve data from provider.');
         }
-
-        $products = json_decode($res->getBody(), true);
-
-        if (json_last_error() != JSON_ERROR_NONE || !isset($products['product_availabilities'])) {
-            throw new ServiceProviderException('Data provided by service is malformed');
-        }
-
-        $products = $products['product_availabilities'];
-
-        $this->validateImportedProducts($products);
-
-        return $products;
     }
 
     /**
@@ -73,19 +88,15 @@ class ProductProviderMocky implements ProductProviderInterface
      */
     private function validateImportedProducts(array $products)
     {
-        if (!$products) {
-            return;
-        }
-
         foreach ($products as $product) {
             if (!(
-                isset($product['places_available']) && is_numeric($product['places_available'])
+                isset($product[self::PRODUCT_PROPERTY_PLACES]) && is_numeric($product[self::PRODUCT_PROPERTY_PLACES])
                 &&
-                isset($product['activity_duration_in_minutes']) && is_numeric($product['activity_duration_in_minutes'])
+                isset($product[self::PRODUCT_PROPERTY_DURATION]) && is_numeric($product[self::PRODUCT_PROPERTY_DURATION])
                 &&
-                isset($product['product_id']) && is_numeric($product['product_id'])
+                isset($product[self::PRODUCT_PROPERTY_ID]) && is_numeric($product[self::PRODUCT_PROPERTY_ID])
                 &&
-                isset($product['activity_start_datetime']) && Validator::isValidDate($product['activity_start_datetime'])
+                isset($product[self::PRODUCT_PROPERTY_START]) && Validator::isValidDate($product[self::PRODUCT_PROPERTY_START])
             )) {
                 throw new ServiceProviderException('Data provided by service is malformed');
             }
