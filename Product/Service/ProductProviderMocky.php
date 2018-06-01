@@ -67,7 +67,7 @@ class ProductProviderMocky implements ProductProviderInterface
 
             $products = json_decode($response->getBody(), true);
 
-            if (json_last_error() != JSON_ERROR_NONE || !isset($products['product_availabilities'])) {
+            if (json_last_error() != JSON_ERROR_NONE || !isset($products[self::COLLECTION_KEY])) {
                 throw new ServiceProviderException('Data provided by service is malformed');
             }
 
